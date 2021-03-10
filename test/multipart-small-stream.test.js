@@ -23,15 +23,8 @@ test('should throw fileSize limitation error on small payload', async function (
   t.tearDown(fastify.close.bind(fastify))
 
   fastify.register(multipart)
-  const errorHandler = fastify.errorHandler
-    ? (error, request, reply) => {
-        if (error && error.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
-          fastify.errorHandler(error, request, reply)
-        }
-      }
-    : undefined
 
-  fastify.post('/', { errorHandler }, async function (req, reply) {
+  fastify.post('/', async function (req, reply) {
     t.ok(req.isMultipart())
 
     const part = await req.file({ limits: { fileSize: 2 }, throwFileSizeLimit: true })
@@ -68,7 +61,7 @@ test('should throw fileSize limitation error on small payload', async function (
   }
 })
 
-test('should not throw and error when throwFileSizeLimit', async function (t) {
+test('should not throw an error when throwFileSizeLimit', async function (t) {
   t.plan(2)
 
   const fastify = Fastify()
@@ -102,13 +95,8 @@ test('should not throw and error when throwFileSizeLimit', async function (t) {
   form.append('upload', fs.createReadStream(filePath))
 
   pump(form, req)
-
-  try {
-    const [res] = await once(req, 'response')
-    t.equal(res.statusCode, 200)
-    res.resume()
-    await once(res, 'end')
-  } catch (error) {
-    t.error(error, 'request')
-  }
+  const [res] = await once(req, 'response')
+  t.equal(res.statusCode, 200)
+  res.resume()
+  await once(res, 'end')
 })
